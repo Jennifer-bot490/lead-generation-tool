@@ -11,6 +11,7 @@ from datetime import datetime
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request, send_file
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from scrapers import BusinessSiteScraper, ScraperError, build_sources
 from utils.data_cleaning import clean_lead, deduplicate, finalize
@@ -19,6 +20,9 @@ from utils.export import to_csv_bytes, to_xlsx_bytes
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
+# Render puts a proxy in front of the app: trust exactly one proxy hop so request.remote_addr
+# is the real visitor IP (and visitors can't fake it with their own X-Forwarded-For header).
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 CONTACT_EMAIL = os.getenv("CONTACT_EMAIL", "")
 RATE_LIMIT = int(os.getenv("RATE_LIMIT_PER_MIN", "5"))
@@ -32,7 +36,7 @@ TEXT_RE = re.compile(r"^[\w\s&'.,()/-]{2,100}$", re.UNICODE)
 
 
 def client_ip():
-    return (request.headers.get("X-Forwarded-For") or request.remote_addr or "?").split(",")[0].strip()
+    return request.remote_addr or "?"
 
 
 def rate_limited(ip):
@@ -42,6 +46,9 @@ def rate_limited(ip):
     if len(q) >= RATE_LIMIT:
         return True
     q.append(now)
+    if len(HITS) > 5000:                     # keep memory small on a free instance
+        for k in [k for k, v in HITS.items() if not v or now - v[-1] > 60]:
+            HITS.pop(k, None)
     return False
 
 
@@ -80,6 +87,12 @@ def run_job(job_id, source_keys, keyword, location, limit, enrich):
 @app.route("/")
 def index():
     return render_template("index.html")
+
+
+@app.route("/health")
+def health():
+    """Used by Render's health check."""
+    return jsonify(status="ok")
 
 
 @app.route("/api/sources")
@@ -141,4 +154,6 @@ def export(fmt):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Local development only. On Render, gunicorn runs the app (see README / render.yaml).
+    app.run(host="127.0.0.1", port=int(os.getenv("PORT", "5000")),
+            debug=os.getenv("FLASK_DEBUG", "1") == "1")
