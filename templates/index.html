@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LeadScout – Lead Generation Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><span class="logo">L</span> LeadScout</div>
+    <nav>
+      <a href="#overview" class="active">📊 Overview</a>
+      <a href="#search">🔎 New Search</a>
+      <a href="#results">📋 Results</a>
+      <a href="#history">🕘 History</a>
+    </nav>
+    <p class="side-note">Public sources only · robots.txt respected</p>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" aria-label="Menu">☰</button>
+      <h1>Lead Generation Dashboard</h1>
+      <span class="badge">No API key needed</span>
+    </header>
+
+    <main>
+      <section class="stats" id="overview">
+        <div class="stat"><span>Total leads</span><strong id="total">0</strong></div>
+        <div class="stat"><span>Phones found</span><strong id="withPhone">0</strong></div>
+        <div class="stat"><span>Emails found</span><strong id="withEmail">0</strong></div>
+        <div class="stat"><span>Businesses found (all searches)</span><strong id="allTime">0</strong></div>
+      </section>
+
+      <section class="card" id="search">
+        <h2>Find businesses</h2>
+        <form id="searchForm" class="form-grid">
+          <label>Business keyword
+            <input id="keyword" required minlength="2" maxlength="100" placeholder="e.g. real estate agency">
+          </label>
+          <label>City / location
+            <input id="location" required minlength="2" maxlength="100" placeholder="e.g. Lahore">
+          </label>
+          <label>Source
+            <select id="source"></select>
+          </label>
+          <label>Max results
+            <select id="limit"><option>25</option><option selected>50</option><option>100</option></select>
+          </label>
+          <button type="submit" id="searchBtn" class="btn primary">Search</button>
+        </form>
+        <label class="check"><input type="checkbox" id="enrich" checked> Also read each business's own website for a public email/phone (slower)</label>
+      </section>
+
+      <section class="card" id="results">
+        <div class="card-head">
+          <h2>Results <small id="shown"></small></h2>
+          <div class="actions">
+            <button class="btn" id="csvBtn" disabled>⬇ CSV</button>
+            <button class="btn" id="xlsxBtn" disabled>⬇ Excel</button>
+          </div>
+        </div>
+        <div class="filters">
+          <input id="filter" placeholder="Filter by name, city, category…">
+          <label class="check"><input type="checkbox" id="onlyPhone"> Has phone</label>
+          <label class="check"><input type="checkbox" id="onlyEmail"> Has email</label>
+          <span class="muted">Exports include only the rows currently shown.</span>
+        </div>
+        <div class="loader" id="loader" hidden><div class="spinner"></div><p id="loaderMsg">Searching…</p></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Business</th><th>Phone</th><th>Email</th><th>Website</th><th>Address</th><th>City</th><th>Category</th><th>Source</th></tr></thead>
+            <tbody id="tbody"><tr><td colspan="9" class="empty">Run a search to see leads here.</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" id="history">
+        <div class="card-head"><h2>Search history</h2><button class="btn" id="clearHistory">Clear</button></div>
+        <ul id="historyList" class="history"></ul>
+        <p class="muted">History is kept only in this browser. Data comes from public sources; use it responsibly and follow local privacy and anti-spam laws when contacting businesses.</p>
+      </section>
+    </main>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
